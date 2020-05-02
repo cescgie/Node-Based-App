@@ -6,6 +6,8 @@
 var server = require("../dist/server");
 var debug = require("debug")("express:server");
 var http = require("http");
+var dotenv = require('dotenv');
+dotenv.config();
 
 //create http server
 var httpPort = normalizePort(process.env.PORT || 8080);
@@ -78,5 +80,5 @@ function onListening() {
         "pipe " + addr :
         "port " + addr.port;
     debug("Listening on " + bind);
-    console.log('Listening on ' + bind);
+    console.log('LISTENING app on ' + bind + '!');
 }

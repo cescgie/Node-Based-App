@@ -1,6 +1,6 @@
-# TypeScript 2 + Express + Node.js
+# TypeScript Based Application
 
-This is application using TypeScript 2.
+This is application using TypeScript 3.
 
 ## Install
 
@@ -8,12 +8,20 @@ Install the node packages via:
 
 `$ npm install`
 
-And then run the grunt task to compile the TypeScript:
+And then run the staging task to compile the TypeScript:
 
-`$ npm run grunt`
+`$ npm run stg`
 
 ## Starting
 
-To start the server run:
+Run server:
 
 `$ npm start`
+
+Or run server in development mode:
+
+`$ npm run dev`
+
+Then open the localhost in the browser with the standard port 8080
+
+`$ http://localhost:8080`

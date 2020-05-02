@@ -1,61 +1,43 @@
-// Include gulp
-var gulp = require('gulp');
+"use strict";
 
-// Include Our Plugins
-var jshint = require('gulp-jshint'),
-    concat = require('gulp-concat'),
-    uglify = require('gulp-uglify'),
-    rename = require('gulp-rename'),
-    newer = require('gulp-newer'),
-    imagemin = require('gulp-imagemin'),
-    pug = require('gulp-pug2'),
-    spawn = require('child_process').spawn,
-    node,
+// Load plugins
+const gulp = require("gulp");
+const ts = require("gulp-typescript");
+const tsProject = ts.createProject("tsconfig.json");
 
-    // folders
-    folder = {
-        src: 'src/',
-        dist: 'dist/',
-        assets: 'public'
-    },
+// Directories here
+const paths = {
+    src: './src/**/*.ts',
+    dist: './dist',
+    views: './views/**/*.pug'
+};
 
-    ts = require("gulp-typescript"),
-    tsProject = ts.createProject("tsconfig.json"),
-    browserSync = require('browser-sync').create();
-
-// Lint Task
-gulp.task('lint', function() {
-    return gulp.src('public/js/*.js')
-        .pipe(jshint())
-        .pipe(jshint.reporter('default'));
-});
-
-gulp.task('assets', function() {
-    var out = folder.dist + 'public/';
-    return gulp.src('public/**/*')
-        .pipe(gulp.dest(out));
-});
-
-gulp.task("scripts", function() {
+// Scripts
+function scripts() {
     return tsProject.src()
         .pipe(tsProject())
-        .js.pipe(gulp.dest(folder.dist));
-});
+        .pipe(gulp.dest(paths.dist));
+}
 
-gulp.task('views', function() {
-    var out = folder.dist + 'views/';
-    return gulp.src('views/**/*.pug')
-        .pipe(gulp.dest(out));
-});
+// Views
+function views() {
+    return gulp.src(paths.views)
+        .pipe(gulp.dest(paths.dist + '/views/'));
+}
 
-// Watch Files For Changes
-gulp.task('watch', function() {
-    gulp.watch('public/**/*', ['assets']);
+// Watch files
+function watchFiles() {
+    gulp.watch(paths.src, gulp.series(scripts));
+    gulp.watch(paths.views, gulp.series(views));
+}
 
-    gulp.watch('src/**/*.ts', ['scripts']);
+// Define complex tasks
+const build = gulp.parallel(scripts, views);
+const watch = gulp.parallel(watchFiles);
 
-    gulp.watch('views/**/*.pug', ['views']);
-});
-
-// Default Task
-gulp.task('default', ['lint', 'assets', 'scripts', 'views']);
+// Export tasks
+exports.scripts = scripts;
+exports.views = views;
+exports.build = build;
+exports.watch = watch;
+exports.default = build;
