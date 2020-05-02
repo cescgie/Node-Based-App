@@ -1,7 +1,7 @@
 {
     "name": "typescript-based-application",
     "description": "An application using TypeScript 3",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "private": true,
     "author": "Yoggi Firmanda",
     "scripts": {
