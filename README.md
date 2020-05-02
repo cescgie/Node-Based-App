@@ -1,6 +1,9 @@
 # TypeScript Based Application
 
-This is application using TypeScript 3.
+This is application using 
+- TypeScript
+- Pug for view engine
+- Gulp for task runner 
 
 ## Install
 
