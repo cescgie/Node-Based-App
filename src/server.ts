@@ -70,6 +70,9 @@ export class Server {
         //load environment variables from .env into ENV (process.env).
         dotenv.config();
 
+        //add static paths for assets
+        this.app.use("/assets", express.static(path.join(__dirname, "public")));
+
         //configure pug
         this.app.set("views", path.join(__dirname, "views"));
         this.app.set("view engine", "pug");

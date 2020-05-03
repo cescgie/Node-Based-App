@@ -1,9 +1,10 @@
-# TypeScript Based Application
+# Node Based Application
 
 This is application using 
 - TypeScript
 - Pug for view engine
 - Gulp for task runner 
+- SCSS
 
 ## Install
 
@@ -28,3 +29,12 @@ Or run server in development mode:
 Then open the localhost in the browser with the standard port 8080
 
 `$ http://localhost:8080`
+
+## Todo
+- ~~Task Runner with Gulp~~
+- ~~Styling with SCSS~~
+- MongoDB connection with implementation of JWT Authentication
+- Authentication with OAuth
+- RESTful API
+- Upload Image
+- Live Chat with Socket.io
