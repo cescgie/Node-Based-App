@@ -10,8 +10,7 @@ A web application using:
 - MongoDB for database program
 
 ## List
-- [x] Task Runner with Gulp
-- [x] Styling with SCSS
+- [x] [Task Runner with Gulp && styling with SCSS](https://github.com/cescgie/Node-Based-App/tree/starter-gulp-scss)
 - [x] [MongoDB connection with implementation of User Authentication using JWT](https://github.com/cescgie/Node-Based-App/tree/mongodb-jwt-auth)
 - [ ] RESTful API
 - [ ] Upload Image
