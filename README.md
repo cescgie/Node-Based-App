@@ -1,18 +1,27 @@
 # Node Based App
 
-This is application using 
-- TypeScript
-- Pug for view engine
-- Gulp for task runner 
-- SCSS for styling
-- JWT for authentication
-- MongoDB for database program
-
 ## Prerequisites
-Create **.env** and complete the value of each variable
+**Database configuration**
+- Connect to database
+```properties
+mongo
 ```
-PORT=5000
-APP_HOST=http://localhost:5000
+- Select database
+```properties
+use dbname
+```  
+- Create user in selected database
+```properties
+db.createUser({
+  user: "dbuser",
+  pwd: "dbpwd",
+  roles: ["readWrite"]
+})
+```  
+**Create *.env* and complete the value of each variable**
+```
+PORT=8080
+APP_HOST=http://localhost:8080
 APP_SECRET=YOUR_APP_SECRET
 
 ADMIN_EMAIL=admin@test.com  
@@ -51,17 +60,7 @@ Or run server in development mode:
 ```properties
 npm run dev
 ```  
-Then open the localhost in the browser with the standard port 8080
+Then open the localhost in the browser with the standard port (process.env.PORT || 8080)
 ```properties
 http://localhost:8080
 ```  
-
-## Todo
-- [x] Task Runner with Gulp
-- [x] Styling with SCSS
-- [x] MongoDB connection with implementation of User Authentication using JWT
-- [ ] RESTful API
-- [ ] Upload Image
-
-## Sources
-- [Express Session](http://expressjs.com/en/resources/middleware/session.html#compatible-session-stores)
