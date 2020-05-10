@@ -1,0 +1,25 @@
+html
+    head
+        title= title
+        link(rel='stylesheet' href='/assets/style/style.min.css')
+    body
+        .container
+            .content
+                .content__header
+                    a.link(href="/")
+                        h1 HOME
+                .content__body
+                    div.signin-wrap
+                        form(action="/callback" method="post")
+                            div.default-form
+                                div.default-form__ttl
+                                    h5=message
+                                div.form-group
+                                    label.form-group__label Email
+                                    input.form-group__input(type="text" name="email")
+                                div.form-group
+                                    label.form-group__label Password
+                                    input.form-group__input(type="text" name="password")
+                                div.form-group
+                                    button.btn(class="full-width") Login
+            

@@ -8,7 +8,8 @@
         "stg": "rm -rf .tmp/ && gulp",
         "dev": "rm -rf .tmp/ & gulp watch & NODE_ENV=development nodemon ./bin/www",
         "start": "node ./bin/www",
-        "tsformat": "tsfmt -r"
+        "tsformat": "tsfmt -r",
+        "db-migrate": "mocha --timeout 15000 dist/migration"
     },
     "dependencies": {
         "body-parser": "^1.19.0",
@@ -16,19 +17,31 @@
         "dotenv": "^8.2.0",
         "errorhandler": "^1.5.1",
         "express": "^4.17.1",
+        "express-session": "^1.17.1",
         "method-override": "^3.0.0",
+        "mongoose": "^5.9.11",
         "morgan": "^1.10.0",
+        "njwt": "^1.0.0",
+        "password-hash": "^1.2.2",
         "path": "^0.12.7",
         "pug": "^2.0.4",
-        "q": "^1.5.1"
+        "q": "^1.5.1",
+        "querystring": "^0.2.0",
+        "url": "^0.11.0"
     },
     "devDependencies": {
         "@types/body-parser": "^1.19.0",
+        "@types/chai": "^4.2.11",
         "@types/cookie-parser": "^1.4.2",
         "@types/dotenv": "^8.2.0",
         "@types/errorhandler": "^1.5.0",
+        "@types/express-session": "^1.17.0",
         "@types/method-override": "0.0.31",
+        "@types/mocha": "^7.0.2",
+        "@types/mongoose": "^5.7.14",
         "@types/morgan": "^1.9.0",
+        "chai": "^4.2.0",
+        "chai-http": "^4.3.0",
         "gulp": "^4.0.2",
         "gulp-autoprefixer": "^7.0.1",
         "gulp-concat": "^2.6.1",
@@ -37,6 +50,7 @@
         "gulp-sass": "^4.1.0",
         "gulp-sourcemaps": "^2.6.5",
         "gulp-typescript": "^6.0.0-alpha.1",
+        "mocha": "^7.1.2",
         "nodemon": "^2.0.3",
         "typescript": "^3.8.3",
         "typescript-formatter": "^7.2.2"

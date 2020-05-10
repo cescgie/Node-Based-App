@@ -1,0 +1,114 @@
+.link {
+  color: $color-green;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 24px;
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+}
+
+.btn {
+    position: relative;
+    text-align: center;
+    border: none;
+    background: $color-green;
+    display: inline-flex;
+    height: 40px;
+    width: 172px;
+    justify-content: center;
+    align-items: center;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 12px;
+    color: #fff;
+    transition: background .2s ease-in-out;
+    border-radius: 2px;
+  
+    &.full-width {
+      width: 100%;
+    }
+    
+    &.disabled,
+    &:disabled {
+      background: $color-dark-grey;
+      pointer-events: none;
+  
+      &.action {
+        cursor: pointer;
+        pointer-events: auto;
+  
+        &:hover {
+          background: darken($color: $color-dark-grey, $amount: 10%);
+        }
+      }
+    }
+  
+    &:hover {
+      background: darken($color: $color-green, $amount: 7%);
+    }
+  }
+  
+.default-form {
+    background: #ffffff;
+    border: 1px solid #e2e6ea;
+    border-radius: 2px;
+    padding: 40px 40px 20px;
+  
+    @media (max-width: 767px) {
+      padding: 20px;
+    }
+  
+    &__ttl {
+      font-weight: normal;
+      font-size: 24px;
+      color: $color-black;
+      margin-bottom: 20px;
+    }
+}
+
+
+.form-group {
+    margin-bottom: 20px;
+    position: relative;
+    $c: &;
+
+    &__label {
+      display: block;
+      width: 100%;
+      color: $color-black;
+      font-size: 12px;
+    }
+
+    &__input {
+      font-weight: 400;
+      display: block;
+      width: 100%;
+      background-color: #FFFFFF;
+      border: 1px solid #E2E6EA;
+      height: 42px;
+      padding: 0 20px;
+      margin-top: 6px;
+      border-radius: 2px;
+      font-size: 14px;
+      color: $color-black;
+      transition: all .2s ease-in-out;
+  
+  
+      &:not(:read-only) {
+        &:hover {
+          border-color: #c6cace;
+        }
+  
+        &:focus {
+          border-color: $color-green;
+        }
+      }
+  
+      &--disabled {
+        color: rgba($color: $color-black, $alpha: 0.34);
+        cursor: default;
+      }
+    }
+  }
+  

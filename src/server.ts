@@ -5,10 +5,14 @@ import * as logger from "morgan";
 import * as path from "path";
 import errorHandler = require("errorhandler");
 import methodOverride = require("method-override");
+import mongoose = require("mongoose");
 
 import { IndexRoute } from "./routes/index";
+import { ApiUserRoute } from "./routes/api/index";
 
 const dotenv = require('dotenv');
+const expressSession = require("express-session");
+
 /**
  * The server.
  *
@@ -43,11 +47,32 @@ export class Server {
         //configure application
         this.config();
 
+        //connect with db
+        this.mongoSetup();
+
         //add routes
         this.routes();
 
         //add api
         this.api();
+    }
+
+    /**
+     * Create and return Router.
+     *
+     * @class Server
+     * @method config
+     * @return void
+     */
+    private routes() {
+        let router: express.Router;
+        router = express.Router();
+
+        //IndexRoute
+        IndexRoute.create(router);
+
+        //use router middleware
+        this.app.use(router);
     }
 
     /**
@@ -58,6 +83,13 @@ export class Server {
      */
     public api() {
         //empty for now
+        let router: express.Router;
+        router = express.Router();
+
+        ApiUserRoute.create(router);
+
+        //use router middleware
+        this.app.use(router);
     }
 
     /**
@@ -91,35 +123,72 @@ export class Server {
         //mount cookie parker
         this.app.use(cookieParser("SECRET_GOES_HERE"));
 
+        const session = {
+            secret: "LoxodontaElephasMammuthusPalaeoloxodonPrimelephas",
+            cookie: {},
+            resave: false,
+            saveUninitialized: true
+        };
+
+        if (this.app.get("env") === "production") {
+            // Serve secure cookies, requires HTTPS
+            session.cookie['secure'] = true;
+        }
+
+        // initialize the session
+        this.app.use(expressSession(session));
+
         //mount override?
         this.app.use(methodOverride());
 
         // catch 404 and forward to error handler
-        this.app.use(function(err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
+        this.app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
             err.status = 404;
             next(err);
         });
+
+        this.app.use((req, res, next) => {
+            res.locals.isAuthenticated = req.session.isAuthenticated;
+            res.locals.user = req.session.user
+            next()
+        })
 
         //error handling
         this.app.use(errorHandler());
     }
 
-    /**
-     * Create and return Router.
-     *
-     * @class Server
-     * @method config
-     * @return void
-     */
-    private routes() {
-        let router: express.Router;
-        router = express.Router();
+    private mongoSetup(): void {
+        let mongoUrl = "mongodb://" + process.env.MONGO_USER + ":" + process.env.MONGO_PASSWORD + "@" + process.env.MONGO_HOST + ":" + process.env.MONGO_PORT + "/" + process.env.MONGO_DB;
+        (<any>mongoose).Promise = global.Promise;
 
-        //IndexRoute
-        IndexRoute.create(router);
+        let DBNAME = process.env.MONGO_DB;
+        console.log(`TRYING to connect with database [\'${DBNAME}\']...`);
 
-        //use router middleware
-        this.app.use(router);
+        mongoose.connect(mongoUrl, {
+            useNewUrlParser: true, // Fix deprecated connection string parser 
+            useUnifiedTopology: true, // Fix deprecated Server Discovery and Monitoring engine
+            keepAlive: true // For long running applications
+        });
+        mongoose.connection.on("close", () => console.log(`CLOSE event on database [\'${DBNAME}\']!`));
+        mongoose.connection.on("error", (error) => console.log(`ERROR event on database [\'${DBNAME}\']!`, error.message));
+        mongoose.connection.on("connected", () => console.log(`CONNECTED with database [\'${DBNAME}\']!`));
+        mongoose.connection.on("disconnected", () => console.log(`DISCONNECTED with database [\'${DBNAME}\']!`));
+
+        // If the Node process ends, ex. catches ctrl+c event, close the Mongoose connection. 
+        process.on('SIGINT', () => {
+            mongoose.connection.close(() => {
+                console.log(`DISCONNECTED database [\'${DBNAME}\'] through app termination after catching ctrl+c event`);
+                process.exit(0);
+            });
+        });
+
+        // catches "kill pid" (for example: nodemon restart)
+        process.on('SIGUSR1', () => {
+            mongoose.connection.close(() => {
+                console.log(`DISCONNECTED database [\'${DBNAME}\'] through app termination after catching "kill pid" event (for example: nodemon restart)`);
+                process.exit(0);
+            });
+        });
+
     }
-
 }
