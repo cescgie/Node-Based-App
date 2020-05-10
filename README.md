@@ -1,40 +1,21 @@
-# Node Based Application
+# Node Based App
 
-This is application using 
+A web application using:
+- Express
 - TypeScript
 - Pug for view engine
 - Gulp for task runner 
-- SCSS
+- SCSS for styling
+- JWT for authentication
+- MongoDB for database program
 
-## Install
+## List
+- [x] Task Runner with Gulp
+- [x] Styling with SCSS
+- [x] [MongoDB connection with implementation of User Authentication using JWT](https://github.com/cescgie/Node-Based-App/tree/mongodb-jwt-auth)
+- [ ] RESTful API
+- [ ] Upload Image
 
-Install the node packages via:
-
-`$ npm install`
-
-And then run the staging task to compile the TypeScript:
-
-`$ npm run stg`
-
-## Starting
-
-Run server:
-
-`$ npm start`
-
-Or run server in development mode:
-
-`$ npm run dev`
-
-Then open the localhost in the browser with the standard port 8080
-
-`$ http://localhost:8080`
-
-## Todo
-- ~~Task Runner with Gulp~~
-- ~~Styling with SCSS~~
-- MongoDB connection with implementation of JWT Authentication
-- Authentication with OAuth
-- RESTful API
-- Upload Image
-- Live Chat with Socket.io
+## Sources
+- [Starter from Brian Love](https://github.com/blove/typescript-express-starter)
+- [Express Session](http://expressjs.com/en/resources/middleware/session.html#compatible-session-stores)
