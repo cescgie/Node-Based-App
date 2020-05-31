@@ -1,13 +1,14 @@
 # Node Based App
 
 A web application using:
-- Express
-- TypeScript
-- Pug for view engine
-- Gulp for task runner 
-- SCSS for styling
-- JWT for authentication
-- MongoDB for database program
+- Express => node framework
+- TypeScript => main language
+- Pug => view engine
+- Gulp => task runner 
+- SCSS => styling
+- JWT => user authentication
+- MongoDB => database program
+- Joi => middleware for validating inputs
 
 ## List
 - [x] [Task Runner with Gulp && styling with SCSS](https://github.com/cescgie/Node-Based-App/tree/starter-gulp-scss)
