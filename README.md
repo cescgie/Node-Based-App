@@ -21,7 +21,7 @@ db.createUser({
 **Create *.env* and complete the value of each variable**
 ```
 PORT=8080
-APP_HOST=http://localhost:8080
+APP_HOST=http://localhost:5000
 APP_SECRET=YOUR_APP_SECRET
 
 ADMIN_EMAIL=admin@test.com  
@@ -62,5 +62,5 @@ npm run dev
 ```  
 Then open the localhost in the browser with the standard port (process.env.PORT || 8080)
 ```properties
-http://localhost:8080
+http://localhost:5000
 ```  

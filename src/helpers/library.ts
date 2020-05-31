@@ -8,6 +8,8 @@ import {
     IUserDataToken, IJWTClaim
 } from "@helpers/type";
 
+import Joi = require("joi");
+
 export class Library {
     /**
      * To hash password
@@ -50,7 +52,6 @@ export class Library {
             iss: process.env.APP_HOST,
             permissions: user_data.role,
             adr: user_data.email,
-            tbr: user_data['origin']
         }
         let jwt = nJwt.create(claims, process.env.APP_SECRET);
 
@@ -118,5 +119,27 @@ export class Library {
                 }
             });
         });
+    }
+
+    joiValidate(res, schema, obj) {
+        const result = Joi.validate(obj, schema);
+        let error_response;
+
+        // console.log(" joi validation result ", result, obj);
+
+        if (result.error !== null) {
+            result.catch(err => {
+                error_response = {
+                    "status": 308,
+                    "message": "PARAMETER_INVALID",
+                    "content": err.details || []
+                };
+
+                res.json(error_response);
+            })
+            return false;
+        }
+
+        return true;
     }
 }

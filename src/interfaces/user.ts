@@ -1,6 +1,6 @@
 export interface IUser {
-    email?: string;
-    password?: string;
+    email: string;
+    password: string;
     username?: string;
     firstname?: string;
     lastname?: string;
@@ -8,7 +8,7 @@ export interface IUser {
     updatedAt?: any;
     updatedBy?: string;
     active?: boolean;
-    token?: string;
-    role?: number;
+    token?: string; // Used to verify user through email
+    role?: number; // 1: master, 2:admin, 3:normal user
     lastLoginAt?: any;
 }
