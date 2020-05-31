@@ -1,0 +1,34 @@
+{
+    "api": [
+        {
+            "path": "^\/api\/users$",
+            "method": "post",
+            "level": "unauth"
+        },
+        {
+            "path": "^\/api\/users$",
+            "method": "get",
+            "level": "auth"
+        },
+        {
+            "path": "^\/api\/users$",
+            "method": "put",
+            "level": "auth"
+        },
+        {
+            "path": "^\/api\/users$",
+            "method": "delete",
+            "level": "admin"
+        },
+        {
+            "path": "^\/api\/users\/auth$",
+            "method": "post",
+            "level": "unauth"
+        },
+        {
+            "path": "^\/api\/users\/verify_user$",
+            "method": "get",
+            "level": "unauth"
+        }
+    ]
+}

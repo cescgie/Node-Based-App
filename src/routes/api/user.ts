@@ -6,7 +6,7 @@ import * as mongoose from 'mongoose';
 // Interface
 import { IUser } from "@interfaces";
 import {
-    IUserDataToken, IResponseAuth
+    IUserDataToken, IResponseAuth, IUserQueryData, IJWTClaim
 } from "@helpers/type";
 // Schema
 import { userSchema } from "../../schemas/index";
@@ -20,6 +20,8 @@ import {
 // Library
 import { Library } from "../../helpers/library";
 
+// Extra modules
+const nJwt = require('njwt');
 import Joi = require("joi");
 import { ObjectId } from "bson";
 
@@ -64,6 +66,17 @@ export class ApiUserRoute extends BaseRoute {
         router.delete("/api/users", (req: Request, res: Response) => {
             new ApiUserRoute().delete(req, res);
         });
+
+        // Authenticate user
+        router.post("/api/users/auth", (req: Request, res: Response) => {
+            new ApiUserRoute().auth(req, res);
+        });
+
+        // Verify user through client Bearer
+        router.get("/api/users/verify_user", (req: Request, res: Response) => {
+            new ApiUserRoute().verify_user(req, res);
+        });
+
     }
 
     /**
@@ -89,11 +102,11 @@ export class ApiUserRoute extends BaseRoute {
     public migration(req: Request, res: Response, next: NextFunction) {
         let token = req.query.token;
         if (token && token === process.env.API_AUTH_TOKEN) {
-            User.findOne().then(user => {
+            User.findOne({ email: req.body.email }).then(user => {
                 if (user && user !== null) {
                     let option = {
-                        status: 200,
-                        message: 'User already exists'
+                        status: 201,
+                        message: 'User exists'
                     }
                     res.send(option)
                 } else {
@@ -127,8 +140,8 @@ export class ApiUserRoute extends BaseRoute {
                         })
                     } else {
                         let options: any = {
-                            "code": 308,
-                            "message": "Uncompleted request data"
+                            "status": 301,
+                            "message": "Query is uncompleted"
                         };
                         res.send(options);
                     }
@@ -138,7 +151,7 @@ export class ApiUserRoute extends BaseRoute {
             })
         } else {
             let options: any = {
-                "code": 401,
+                "status": 401,
                 "message": "Unmatched token!"
             };
             res.send(options);
@@ -178,7 +191,8 @@ export class ApiUserRoute extends BaseRoute {
         }
 
         // check if already registered
-        User.findOne({ email: { $regex: email, $options: "i" } }).then((user) => {
+        this.findUserByEmail(email).then(result => {
+            let user: IUser = result.content
             if (!user || user === null) {
                 this.createUser(res, userData)
             } else {
@@ -190,20 +204,15 @@ export class ApiUserRoute extends BaseRoute {
                 delete user.role;
 
                 let response: any = {
-                    "status": 301,
-                    "message": 'User already exists',
+                    "status": 201,
+                    "message": 'User exists',
                     "content": user
                 };
                 res.send(response);
             }
-        }).catch((err) => {
-            let response: any = {
-                "status": 404,
-                "message": "Database error",
-                "content": err
-            };
-            res.send(response);
-        });
+        }).catch(err => {
+            res.send(err);
+        })
     }
 
     /**
@@ -217,6 +226,7 @@ export class ApiUserRoute extends BaseRoute {
         let verify_token: any = this.library.hashPassword(userData.email);
         userData['password'] = (userData.password) ? this.library.hashPassword(userData.password) : "";
         userData['token'] = verify_token;
+        userData['lastLoginAt'] = new Date();
 
         // save to DB
         let user_model = new User(userData)
@@ -235,11 +245,11 @@ export class ApiUserRoute extends BaseRoute {
                     email: createdUser.email
                 }
                 /**
-                 * Generate auth token
-                 * Auth token is used to authenticate user while signin or signup
+                 * Generate bearer token for authentication
+                 * Bearer token is used to authenticate user while signin or signup
                  * This token is not the same as verify user that is stored in DB user.token 
                  */
-                let auth_token: any = this.library.generateToken(dataForToken);
+                let bearer_token: any = this.library.generateToken(dataForToken);
 
                 // Convert null-prototype object to a standard javascript Object
                 createdUser = JSON.parse(JSON.stringify(createdUser));
@@ -248,12 +258,12 @@ export class ApiUserRoute extends BaseRoute {
                 delete createdUser.token;
                 delete createdUser.role;
 
-                // Response contains token in order to enable user to directly signin after registering
+                // Response contains bearer token in order to enable user to directly signin after registering
                 let response: IResponseAuth = {
                     status: 200,
                     message: 'User successfully created',
                     content: {
-                        auth_token: auth_token,
+                        bearer_token: bearer_token,
                         user: createdUser
                     }
                 }
@@ -264,17 +274,21 @@ export class ApiUserRoute extends BaseRoute {
 
     /**
      * Method to get users (if sent param included _id or email or user, then get selected user(s))
-     * @param req query: (email&/username&/_id) . If req.email/req.username/req._id empty, return all users
+     * @param req query: (email&/username&/_id)
      * @param res {_id,createdAt,updatedAt,firstname,lastname,email,etc}
      */
     public get(req: Request, res: Response) {
+        let userID = (<any>req).userData.userID;
+        let userRole = (<any>req).userData.userRole;
+
         const schema = Joi.object().keys({
             email: Joi.string().optional(),
             emails: Joi.string().regex(/[,]*/).optional(),
             _id: Joi.string().optional(),
             _ids: Joi.string().regex(/[,]*/).optional(),
             skip: Joi.string().regex(/[\d]+/).optional(),
-            limit: Joi.string().regex(/[\d]+/).optional()
+            limit: Joi.string().regex(/[\d]+/).optional(),
+            all: Joi.boolean().optional()
         });
 
         if (!this.library.joiValidate(res, schema, req.query)) {
@@ -284,13 +298,39 @@ export class ApiUserRoute extends BaseRoute {
         let QUERY: any = null;
         let MATCH: any = {};
 
-        if (req.query._id && req.query._id !== 'null' && req.query._id !== undefined) {
-            MATCH['_id'] = mongoose.Types.ObjectId(String(req.query._id))
-        } else if (req.query._ids && req.query._ids !== 'null' && req.query._ids !== undefined) {
-            let _ids: any = req.query._ids;
-            _ids = _ids.split(',').map(i => mongoose.Types.ObjectId(i));
-            MATCH['_id'] = { $in: _ids }
+        /**
+         * Restrict user
+         * Only Master(1) & Admin(2) are allowed to fetch user datas by others parameters
+         */
+        if (userRole > 2) {
+            if (req.query._id && req.query._id !== 'null' && req.query._id !== undefined) {
+                if (req.query._id !== userID) {
+                    let options: any = {
+                        "status": 403,
+                        "message": "Not authorized"
+                    };
+                    res.json(options);
+                    return;
+                } else {
+                    MATCH['_id'] = new ObjectId(String(req.query._id))
+                }
+            } else {
+                MATCH['_id'] = new ObjectId(userID)
+            }
+        } else {
+            if ((!req.query._id || req.query._id === undefined)) {
+                if ((!req.query.all || req.query.all === 'false')) {
+                    MATCH['_id'] = mongoose.Types.ObjectId(userID)
+                }
+            } else if (req.query._id && req.query._id !== 'null' && req.query._id !== undefined) {
+                MATCH['_id'] = mongoose.Types.ObjectId(String(req.query._id))
+            } else if (req.query._ids && req.query._ids !== 'null' && req.query._ids !== undefined) {
+                let _ids: any = req.query._ids;
+                _ids = _ids.split(',').map(i => mongoose.Types.ObjectId(i));
+                MATCH['_id'] = { $in: _ids }
+            }
         }
+
         if (req.query.email && req.query.email !== 'null' && req.query.email !== undefined) {
             MATCH['email'] = { $regex: req.query.email, $options: "i" }
         } else if (req.query.emails && req.query.emails !== 'null' && req.query.emails !== undefined) {
@@ -375,6 +415,9 @@ export class ApiUserRoute extends BaseRoute {
      * @param res status
      */
     public update(req: Request, res: Response) {
+        let userID = (<any>req).userData.userID;
+        let userRole = (<any>req).userData.userRole;
+
         const schema = Joi.object().keys({
             email: Joi.string(),
             _id: Joi.string(),
@@ -422,58 +465,68 @@ export class ApiUserRoute extends BaseRoute {
                 };
                 res.json(response);
             } else {
-                let arrayKey: any = [];
+                // if role is 1(master) or 2(admin) or userID is matched then update allowed
+                if (userRole == 1 || userRole == 2 || userID == user._id) {
+                    let arrayKey: any = [];
 
-                for (let key in req.body) {
-                    arrayKey.push(key);
-                }
-
-                // remove token, email from arrayKey to prevent update
-                if (arrayKey.indexOf('email') !== -1) {
-                    arrayKey.splice(arrayKey.indexOf('email'), 1);
-                }
-                if (arrayKey.indexOf('token') !== -1) {
-                    arrayKey.splice(arrayKey.indexOf('token'), 1);
-                }
-
-                let data_toUpdate: any = {};
-                // update only given data
-                for (let i = 0; i < arrayKey.length; i++) {
-                    // if password given, hash it
-                    if (arrayKey[i] == 'password') {
-                        data_toUpdate[arrayKey[i]] = this.library.hashPassword(req.body[arrayKey[i]]);
-                    } else {
-                        data_toUpdate[arrayKey[i]] = req.body[arrayKey[i]];
+                    for (let key in req.body) {
+                        arrayKey.push(key);
                     }
-                }
-                // update time
-                data_toUpdate['updatedAt'] = new Date();
 
-                user.set(data_toUpdate);
-                user.save((err, updatedUser) => {
-                    if (err) {
-                        let response = {
-                            "status": 402,
-                            "message": "Database error",
-                            "content": err
-                        };
-                        res.send(response);
-                    } else {
-                        // Convert null-prototype object to a standard javascript Object
-                        updatedUser = JSON.parse(JSON.stringify(updatedUser));
-                        // Remove secret values by key before showing them in response auth
-                        delete updatedUser.password;
-                        delete updatedUser.token;
-                        delete updatedUser.role;
-
-                        let response = {
-                            "status": 200,
-                            "message": 'User successfully updated',
-                            "content": updatedUser
-                        };
-                        res.send(response);
+                    // remove token, email from arrayKey to prevent update
+                    if (arrayKey.indexOf('email') !== -1) {
+                        arrayKey.splice(arrayKey.indexOf('email'), 1);
                     }
-                });
+                    if (arrayKey.indexOf('token') !== -1) {
+                        arrayKey.splice(arrayKey.indexOf('token'), 1);
+                    }
+
+                    let data_toUpdate: any = {};
+                    // update only given data
+                    for (let i = 0; i < arrayKey.length; i++) {
+                        // if password given, hash it
+                        if (arrayKey[i] == 'password') {
+                            data_toUpdate[arrayKey[i]] = this.library.hashPassword(req.body[arrayKey[i]]);
+                        } else {
+                            data_toUpdate[arrayKey[i]] = req.body[arrayKey[i]];
+                        }
+                    }
+                    // update time
+                    data_toUpdate['updatedAt'] = new Date();
+
+                    user.set(data_toUpdate);
+                    user.save((err, updatedUser) => {
+                        if (err) {
+                            let response = {
+                                "status": 402,
+                                "message": "Database error",
+                                "content": err
+                            };
+                            res.send(response);
+                        } else {
+                            // Convert null-prototype object to a standard javascript Object
+                            updatedUser = JSON.parse(JSON.stringify(updatedUser));
+                            // Remove secret values by key before showing them in response auth
+                            delete updatedUser.password;
+                            delete updatedUser.token;
+                            delete updatedUser.role;
+
+                            let response = {
+                                "status": 200,
+                                "message": 'User successfully updated',
+                                "content": updatedUser
+                            };
+                            res.send(response);
+                        }
+                    });
+                } else {
+                    // user does not have authorization
+                    let response = {
+                        "status": 403,
+                        "message": "Not authorized"
+                    };
+                    res.json(response);
+                }
             }
         });
     }
@@ -519,8 +572,8 @@ export class ApiUserRoute extends BaseRoute {
         User.findOne(QUERY).then(result => {
             if (!result || result === null) {
                 let response = {
-                    "status": 302,
-                    "message": "No user exists"
+                    "status": 202,
+                    "message": "User not exists"
                 };
                 res.json(response);
             } else {
@@ -542,5 +595,220 @@ export class ApiUserRoute extends BaseRoute {
                 });
             }
         });
+    }
+
+    /**
+     * Authenticate user
+     * @param req token,email,password
+     * @param res status, content(id, role, JWT token)
+     */
+    public auth(req: Request, res: Response) {
+        const schema = Joi.object().keys({
+            email: Joi.string().required(),
+            password: Joi.string().required(),
+            remember: Joi.boolean().optional()
+        });
+
+        if (!this.library.joiValidate(res, schema, req.body)) {
+            return;
+        }
+
+        let email = req.body.email;
+        let password = req.body.password;
+        let remember = req.body.remember;
+
+        let userQueryData: IUserQueryData = {
+            email: req.body.email,
+            password: req.body.password,
+            remember: req.body.remember
+        }
+
+        // Check if email & password exist
+        if (email && password) {
+            // Check if user exist by email
+            this.findUserByEmail(email).then(result => {
+                let user: IUser = result.content
+                this.authUser(res, user, userQueryData)
+            }).catch(err => {
+                res.send(err);
+            })
+        } else {
+            let response = {
+                "status": 301,
+                "message": "Query is uncompleted"
+            };
+            res.send(response);
+        }
+    }
+
+    authUser(res, user, userLoginData: IUserQueryData) {
+        // check if user already active
+        if (!user.active) {
+            let response = {
+                status: 306,
+                message: "User is unverified. Please activate user first.",
+            };
+            res.send(response);
+        } else if (!this.library.verifyPassword(userLoginData.password, user.password)) {
+            // if user password unverified
+            let response = {
+                status: 305,
+                message: "Credentials are not matched",
+            };
+            res.send(response);
+        } else {
+            let user_data: IUserDataToken = {
+                _id: user._id,
+                role: user.role,
+                remember: userLoginData.remember,
+                email: userLoginData.email
+            };
+            // Generate Bearer Token
+            let bearer_token: string = this.library.generateToken(user_data);
+
+            // Send response data including token, id, role
+            let responseData: IResponseAuth = {
+                status: 200,
+                message: 'User successfully authenticated',
+                content: {
+                    bearer_token: bearer_token,
+                    user: user
+                }
+            }
+
+            let lastLoginAt = new Date();
+            let data_toUpdate = {
+                "lastLoginAt": lastLoginAt
+            };
+
+            User.findOneAndUpdate(
+                {
+                    "email": user.email,
+                },
+                data_toUpdate,
+                (err, updatedUser) => {
+                    res.send(responseData);
+                })
+        }
+    }
+
+    /**
+    * Verify jwt token
+    * @param req 
+    * @param res 
+    */
+    public verify_user(req: Request, res: Response) {
+        if (req.headers['authorization'] && req.headers['authorization'] !== null) {
+            let headerAuth: any = req.headers['authorization'];
+            /**
+             * get token from headerAuth
+             * check if token valid with
+             */
+            let getToken: any = headerAuth.split(' ');
+            // verify token
+            nJwt.verify(getToken[1], process.env.APP_SECRET, (err, token) => {
+                if (err) {
+                    // respond to request with error
+                    // console.log('token invalid');
+                    res.send({ status: 401 });
+                } else {
+                    /**
+                     * Check expired
+                     * Check issue
+                     */
+                    let today = new Date();
+                    let exp = new Date(token.body.exp)
+                    let _token: IJWTClaim = token.body;
+                    // check if exp bigger then today
+                    if (exp.getTime() < today.getTime()) {
+                        // console.log('expired')
+                        res.send({ status: 401, message: 'SESSION_EXPIRED' });
+                    } else {
+                        // console.log('valid')
+                        // check if issuer is correct
+                        let iss = _token.iss
+                        if (process.env.APP_HOST !== iss) {
+                            // console.log('false issuer')
+                            res.send({ status: 401, message: 'FALSE_ISSUER' });
+                        } else {
+                            // console.log('correct issuer')
+                            /**
+                             * Update user last login by origin
+                             */
+                            let user_email = _token.adr;
+                            let lastLoginAt = new Date();
+                            let data_toUpdate = {
+                                "lastLoginAt": lastLoginAt
+                            };
+
+                            // Check if user exist
+                            this.findUserByEmail(user_email).then(result => {
+                                User.findOneAndUpdate(
+                                    {
+                                        "email": user_email,
+                                    },
+                                    data_toUpdate,
+                                    (err, updatedUser) => {
+                                        res.send({ status: 200, body: { status: 'ok', content: _token } });
+                                    })
+                            }).catch(err => {
+                                res.send(err);
+                            })
+                        }
+                    }
+                }
+            });
+        } else {
+            // console.log('end');
+            res.send({ status: 401, message: "No Bearer Token available" });
+        }
+    }
+
+    public findUserByEmail(email: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+            /**User find uses regex to ignore case sensitive */
+            User.findOne({ email: { $regex: email, $options: "i" } }).then(user => {
+                if (!user || user === null) {
+                    /** Double check user */
+                    User.findOne({ email: email }).then(user => {
+                        if (!user || user === null) {
+                            let response = {
+                                status: 202,
+                                message: "User not exists",
+                            };
+                            resolve(response)
+                        } else {
+                            let response = {
+                                status: 200,
+                                message: "User exists",
+                                content: user
+                            };
+                            resolve(response)
+                        }
+                    }).catch(err => {
+                        let response = {
+                            status: 309,
+                            message: "Query error",
+                            content: err
+                        };
+                        reject(response)
+                    })
+                } else {
+                    let response = {
+                        status: 200,
+                        message: "User exists",
+                        content: user
+                    };
+                    resolve(response)
+                }
+            }).catch(err => {
+                let response = {
+                    status: 309,
+                    message: "Query error",
+                    content: err
+                };
+                reject(response)
+            })
+        })
     }
 }

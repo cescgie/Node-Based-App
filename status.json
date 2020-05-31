@@ -1,0 +1,18 @@
+[
+    {
+        "status": 201,
+        "message": "User exists"
+    },
+    {
+        "status": 202,
+        "message": "User not exists"
+    },
+    {
+        "status": 403,
+        "message": "Not authorized"
+    },
+    {
+        "status": 406,
+        "message": "Signature verification failed"
+    }
+]

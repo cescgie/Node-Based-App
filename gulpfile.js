@@ -10,6 +10,7 @@ const sass = require('gulp-sass');
 const autoprefixer = require('gulp-autoprefixer');
 const sourcemaps = require('gulp-sourcemaps');
 const concat = require('gulp-concat');
+const del = require('del');
 
 // Directories here
 const paths = {
@@ -59,15 +60,27 @@ function fonts() {
         .pipe(gulp.dest(paths.dist+'/'+paths.assets + '/fonts'));
 };
 
+/**
+ * Auth registry
+ */
+function copyAuth() {
+    // Copy assets
+    return gulp.src(['./src/auth-registry.json'],
+        del(paths.dist + '/auth-registry.json')
+    )
+    .pipe(gulp.dest(paths.dist));
+}
+
 // Watch files
 function watchFiles() {
     gulp.watch(paths.src, gulp.series(scripts));
+    gulp.watch('src/auth-registry.json', gulp.series(copyAuth))
     gulp.watch(paths.views, gulp.series(views));
     gulp.watch(paths.assets+'/style/*.scss', gulp.series(styles));
 }
 
 // Define complex tasks
-const build = gulp.parallel(scripts, views, styles, fonts);
+const build = gulp.parallel(scripts, views, styles, fonts, copyAuth);
 const watch = gulp.parallel(watchFiles);
 
 // Export tasks

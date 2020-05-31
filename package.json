@@ -43,6 +43,7 @@
         "@types/morgan": "^1.9.0",
         "chai": "^4.2.0",
         "chai-http": "^4.3.0",
+        "del": "^5.1.0",
         "gulp": "^4.0.2",
         "gulp-autoprefixer": "^7.0.1",
         "gulp-concat": "^2.6.1",
