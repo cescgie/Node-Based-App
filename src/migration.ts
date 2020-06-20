@@ -23,7 +23,7 @@ var createAdminUser = () => {
                 password: password
             }
             chai.request(host)
-                .post('/api/user/migration?token=' + token)
+                .post('/api/users/migration?token=' + token)
                 .set('Content-Type', 'application/x-www-form-urlencoded')
                 .set('Accept', 'application/json')
                 .send(data)

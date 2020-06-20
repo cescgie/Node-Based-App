@@ -1,6 +1,11 @@
 {
     "api": [
         {
+            "path": "^\/api\/user\/migration$",
+            "method": "post",
+            "level": "unauth"
+        },
+        {
             "path": "^\/api\/users$",
             "method": "post",
             "level": "unauth"

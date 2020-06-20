@@ -43,7 +43,7 @@ export class ApiUserRoute extends BaseRoute {
         //log
         console.log("[ApiUserRoute::create] Creating api user route.");
 
-        router.post("/api/user/migration", (req: Request, res: Response, next: NextFunction) => {
+        router.post("/api/users/migration", (req: Request, res: Response, next: NextFunction) => {
             new ApiUserRoute().migration(req, res, next);
         });
 
