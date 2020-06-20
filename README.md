@@ -46,10 +46,7 @@ And then run the staging task to compile the TypeScript:
 ```properties
 npm run stg
 ```  
-For user authentication feature, run bellow task to create admin user:
-```properties
-npm run db-migrate
-``` 
+
 ## Starting
 
 Run server:
@@ -64,3 +61,9 @@ Then open the localhost in the browser with the standard port (process.env.PORT 
 ```properties
 http://localhost:5000
 ```  
+
+## Init Admin
+For user authentication feature, after starting the app, run bellow task to create admin user:
+```properties
+npm run db-migrate
+``` 
