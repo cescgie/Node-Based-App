@@ -12,8 +12,7 @@ import { ApiUserRoute } from "./routes/api/index";
 
 const dotenv = require('dotenv');
 const expressSession = require("express-session");
-
-import { Auth } from "./auth";
+import * as cors from "cors";
 
 /**
  * The server.
@@ -23,7 +22,6 @@ import { Auth } from "./auth";
 export class Server {
 
     public app: express.Application;
-    private Auth: Auth;
 
     /**
      * Bootstrap the application.
@@ -46,9 +44,6 @@ export class Server {
     constructor() {
         //create expressjs application
         this.app = express();
-
-        //connect auth registry
-        this.Auth = new Auth();
 
         //configure application
         this.config();
@@ -108,6 +103,12 @@ export class Server {
         //load environment variables from .env into ENV (process.env).
         dotenv.config();
 
+        // trust proxy setup
+        this.app.set('trust proxy', true);
+
+        // npm cors
+        this.app.use(cors());
+
         //add static paths for assets
         this.app.use("/assets", express.static(path.join(__dirname, "public")));
 
@@ -158,22 +159,6 @@ export class Server {
             res.locals.user = req.session.user
             next()
         })
-
-        let bypasslocalclient: boolean = process.env.BYPASS_AUTH_FOR_LOCAL_CLIENT == "1";
-
-        this.app.use((req: express.Request, res: any, next: express.NextFunction) => {
-
-            let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            if ((<String>ip).substr(0, 7) == "::ffff:") {
-                ip = (<String>ip).substr(7)
-            }
-
-            if (bypasslocalclient && ip == "127.0.0.1") {
-                next()
-            } else {
-                this.Auth.authenticate(req, res, next);
-            }
-        });
 
         //error handling
         this.app.use(errorHandler());

@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { BaseRoute } from "./route";
 
-const middleware = require('../helpers/middleware');
 import * as mongoose from 'mongoose';
 
 import {
@@ -18,6 +17,10 @@ import { userSchema } from "../schemas/index";
 // Model
 import { IUserModel } from "@models/user";
 const User: mongoose.Model<IUserModel> = mongoose.model<IUserModel>("User", userSchema);
+
+// Middleware
+import { Middleware } from "../helpers/middleware";
+const middleware = new Middleware();
 
 /**
  * / route

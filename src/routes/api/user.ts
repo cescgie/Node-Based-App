@@ -25,6 +25,10 @@ const nJwt = require('njwt');
 import Joi = require("joi");
 import { ObjectId } from "bson";
 
+// Middleware
+import { Middleware } from "../../helpers/middleware";
+const group = new Middleware();
+
 /**
  * / route
  *
@@ -43,37 +47,37 @@ export class ApiUserRoute extends BaseRoute {
         //log
         console.log("[ApiUserRoute::create] Creating api user route.");
 
-        router.post("/api/users/migration", (req: Request, res: Response, next: NextFunction) => {
+        router.post("/api/users/migration", group.unauth, (req: Request, res: Response, next: NextFunction) => {
             new ApiUserRoute().migration(req, res, next);
         });
 
         // Create user
-        router.post("/api/users", (req: Request, res: Response) => {
+        router.post("/api/users", group.unauth, (req: Request, res: Response) => {
             new ApiUserRoute().create(req, res);
         });
 
         // Get user
-        router.get("/api/users", (req: Request, res: Response) => {
+        router.get("/api/users", group.auth, (req: Request, res: Response) => {
             new ApiUserRoute().get(req, res);
         });
 
         // Update user
-        router.put("/api/users", (req: Request, res: Response) => {
+        router.put("/api/users", group.auth, (req: Request, res: Response) => {
             new ApiUserRoute().update(req, res);
         });
 
         // Delete user
-        router.delete("/api/users", (req: Request, res: Response) => {
+        router.delete("/api/users", group.admin, (req: Request, res: Response) => {
             new ApiUserRoute().delete(req, res);
         });
 
         // Authenticate user
-        router.post("/api/users/auth", (req: Request, res: Response) => {
+        router.post("/api/users/auth", group.unauth, (req: Request, res: Response) => {
             new ApiUserRoute().auth(req, res);
         });
 
         // Verify user through client Bearer
-        router.get("/api/users/verify_user", (req: Request, res: Response) => {
+        router.get("/api/users/verify_user", group.unauth, (req: Request, res: Response) => {
             new ApiUserRoute().verify_user(req, res);
         });
 
